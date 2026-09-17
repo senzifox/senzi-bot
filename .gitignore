@@ -1,0 +1,11 @@
+__pycache__/
+!downloads/.gitkeep
+.claude/
+.env
+.pytest_cache/
+.ruff_cache/
+.venv/
+.vscode/
+*.pyc
+AGENTS.md
+downloads/*

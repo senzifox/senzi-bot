@@ -1,0 +1,9 @@
+.venv/
+downloads/*
+!downloads/.gitkeep
+.git/
+__pycache__/
+*.pyc
+tests/
+.env
+.vscode/

@@ -14,7 +14,7 @@ class DownloadError(Exception):
     pass
 
 
-TELEGRAM_BOT_API_FILE_LIMIT_BYTES = 50 * 1024 * 1024
+TELEGRAM_BOT_API_FILE_LIMIT_BYTES = 2000 * 1024 * 1024
 
 
 def _estimate_size_bytes(info: Mapping[str, Any]) -> int | None:
@@ -36,7 +36,7 @@ def _reject_if_too_large(size_bytes: int, *, estimated: bool) -> None:
     qualifier = "примерно " if estimated else ""
     raise DownloadError(
         f"видео весит {qualifier}{size_bytes / 1024 / 1024:.0f} МБ, "
-        f"бот временно принимает файлы не больше 50 МБ"
+        f"бот принимает файлы не больше {TELEGRAM_BOT_API_FILE_LIMIT_BYTES // 1024 // 1024} МБ"
     )
 
 

@@ -35,6 +35,9 @@ jobs:
           ALLOWED_USER_IDS=${{ secrets.ALLOWED_USER_IDS }}
           REDIS_URL=redis://redis:6379
           PLACEHOLDER_PHOTO_FILE_ID=${{ secrets.PLACEHOLDER_PHOTO_FILE_ID }}
+          CURRENCY_PLACEHOLDER_PHOTO_FILE_ID=${{ secrets.CURRENCY_PLACEHOLDER_PHOTO_FILE_ID }}
+          TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
           EOF
 
       - run: docker compose up -d --build

@@ -68,8 +68,8 @@ def test_download_video_rejects_upfront_when_estimated_size_too_large(mock_youtu
     mock_ydl.extract_info.return_value = {
         "title": "Huge video",
         "requested_formats": [
-            {"filesize": 200 * 1024 * 1024},
-            {"filesize": 40 * 1024 * 1024},
+            {"filesize": 2000 * 1024 * 1024},
+            {"filesize": 500 * 1024 * 1024},
         ],
     }
     mock_youtube_dl.return_value.__enter__.return_value = mock_ydl

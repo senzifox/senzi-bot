@@ -1,12 +1,9 @@
 import asyncio
 import logging
-import os
 from pathlib import Path
 from uuid import uuid4
 
 from aiogram import Bot
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 from aiogram.types import (
     FSInputFile,
     InlineKeyboardButton,
@@ -17,6 +14,7 @@ from dotenv import load_dotenv
 
 from bot.queue import get_redis_settings
 from bot.services.downloader import DownloadError, download_video
+from bot.telegram_api import create_bot
 
 load_dotenv()
 
@@ -71,10 +69,7 @@ async def download_youtube_job(
 
 
 async def startup(ctx: dict) -> None:
-    ctx["bot"] = Bot(
-        token=os.environ["BOT_TOKEN"],
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
-    )
+    ctx["bot"] = create_bot()
 
 
 async def shutdown(ctx: dict) -> None:

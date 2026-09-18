@@ -1,0 +1,10 @@
+services:
+  bot:
+    command: sh -c "pip install --no-cache-dir debugpy && python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5678 -m bot.main"
+    ports:
+      - "5678:5678"
+
+  worker:
+    command: sh -c "pip install --no-cache-dir debugpy && python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:5679 -c 'from arq import run_worker; from bot.worker import WorkerSettings; run_worker(WorkerSettings)'"
+    ports:
+      - "5679:5679"

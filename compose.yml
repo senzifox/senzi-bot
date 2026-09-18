@@ -3,6 +3,8 @@ services:
     build: .
     container_name: senzi-bot
     restart: unless-stopped
+    depends_on:
+      - redis
     env_file:
       - .env
     volumes:
@@ -12,3 +14,30 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  worker:
+    build: .
+    container_name: senzi-bot-worker
+    command: arq bot.worker.WorkerSettings
+    restart: unless-stopped
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./downloads:/app/downloads
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: senzi-bot-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  redis-data:

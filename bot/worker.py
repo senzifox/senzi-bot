@@ -7,7 +7,12 @@ from uuid import uuid4
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import FSInputFile, InputMediaVideo
+from aiogram.types import (
+    FSInputFile,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaVideo,
+)
 from dotenv import load_dotenv
 
 from bot.queue import get_redis_settings
@@ -28,6 +33,10 @@ async def download_youtube_job(
     job_dir.mkdir(parents=True, exist_ok=True)
     uploaded = None
 
+    reply_markup = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Открыть на YouTube", url=url)]]
+    )
+
     try:
         file_path = await asyncio.to_thread(download_video, url, job_dir)
         uploaded = await bot.send_video(
@@ -38,17 +47,20 @@ async def download_youtube_job(
         await bot.edit_message_media(
             inline_message_id=inline_message_id,
             media=InputMediaVideo(media=uploaded.video.file_id),
+            reply_markup=reply_markup,
         )
     except DownloadError as e:
         await bot.edit_message_caption(
             inline_message_id=inline_message_id,
             caption=f"Не удалось скачать: {e}",
+            reply_markup=reply_markup,
         )
     except Exception:
         logger.exception("Ошибка при скачивании %s", url)
         await bot.edit_message_caption(
             inline_message_id=inline_message_id,
             caption="Что-то сломалось на моей стороне, гляну логи",
+            reply_markup=reply_markup,
         )
     finally:
         if uploaded is not None:

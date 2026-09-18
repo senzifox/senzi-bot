@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -15,32 +15,28 @@ def _mock_session(status: int, json_body: dict):
 
     mock_session = MagicMock()
     mock_session.get.return_value = mock_get_cm
-
-    mock_session_cm = AsyncMock()
-    mock_session_cm.__aenter__.return_value = mock_session
-    return mock_session_cm
+    return mock_session
 
 
-@patch("bot.services.crypto.aiohttp.ClientSession")
-async def test_get_usd_prices_success(mock_session_cls):
-    mock_session_cls.return_value = _mock_session(200, {"bitcoin": {"usd": 60000.0}})
+async def test_get_usd_prices_success():
+    session = _mock_session(200, {"bitcoin": {"usd": 60000.0}})
 
-    prices = await get_usd_prices(["bitcoin"])
+    prices = await get_usd_prices(session, ["bitcoin"])
 
     assert prices == {"bitcoin": 60000.0}
 
 
-@patch("bot.services.crypto.aiohttp.ClientSession")
-async def test_get_usd_prices_http_error(mock_session_cls):
-    mock_session_cls.return_value = _mock_session(500, {})
+async def test_get_usd_prices_http_error():
+    session = _mock_session(500, {})
 
     with pytest.raises(CryptoError, match="HTTP 500"):
-        await get_usd_prices(["bitcoin"])
+        await get_usd_prices(session, ["bitcoin"])
 
 
-@patch("bot.services.crypto.aiohttp.ClientSession")
-async def test_get_usd_prices_unknown_coin(mock_session_cls):
-    mock_session_cls.return_value = _mock_session(200, {})
+async def test_get_usd_prices_unknown_coin():
+    session = _mock_session(200, {})
 
-    with pytest.raises(CryptoError, match="not-a-coin"):
-        await get_usd_prices(["not-a-coin"])
+    with pytest.raises(CryptoError, match="not-a-coin") as exc_info:
+        await get_usd_prices(session, ["not-a-coin"])
+
+    assert exc_info.value.coingecko_id == "not-a-coin"

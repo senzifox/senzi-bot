@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 
+import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -30,8 +31,9 @@ async def main() -> None:
 
     queue = await create_queue_pool()
 
-    logging.info("Стартуем polling")
-    await dp.start_polling(bot, queue=queue)
+    async with aiohttp.ClientSession() as http_session:
+        logging.info("Стартуем polling")
+        await dp.start_polling(bot, queue=queue, http_session=http_session)
 
 
 if __name__ == "__main__":

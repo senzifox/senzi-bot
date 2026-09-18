@@ -53,16 +53,17 @@ TICKER_TO_COINGECKO_ID = {
 
 
 class CryptoError(Exception):
-    pass
+    def __init__(self, message: str, coingecko_id: str | None = None) -> None:
+        super().__init__(message)
+        self.coingecko_id = coingecko_id
 
 
-async def get_usd_prices(coingecko_ids: list[str]) -> dict[str, float]:
+async def get_usd_prices(
+    session: aiohttp.ClientSession, coingecko_ids: list[str]
+) -> dict[str, float]:
     params = {"ids": ",".join(coingecko_ids), "vs_currencies": "usd"}
 
-    async with (
-        aiohttp.ClientSession() as session,
-        session.get(COINGECKO_PRICE_URL, params=params) as response,
-    ):
+    async with session.get(COINGECKO_PRICE_URL, params=params) as response:
         if response.status != 200:
             raise CryptoError(f"сервис курсов крипты недоступен (HTTP {response.status})")
         data = await response.json()
@@ -71,6 +72,6 @@ async def get_usd_prices(coingecko_ids: list[str]) -> dict[str, float]:
     for coingecko_id in coingecko_ids:
         entry = data.get(coingecko_id)
         if entry is None or "usd" not in entry:
-            raise CryptoError(f"не знаю курс {coingecko_id}")
+            raise CryptoError(f"не знаю курс {coingecko_id}", coingecko_id=coingecko_id)
         prices[coingecko_id] = entry["usd"]
     return prices

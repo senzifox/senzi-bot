@@ -17,6 +17,10 @@ from bot.handlers.currency import parse_currency_query
         ("btc usd 1", (1.0, "BTC", "USD")),
         ("1 btc eth", (1.0, "BTC", "ETH")),
         ("btc rub", (1.0, "BTC", "RUB")),
+        ("1,234.56 usd rub", (1234.56, "USD", "RUB")),
+        ("1,234,567 usd rub", (1234567.0, "USD", "RUB")),
+        ("nan usd rub", (1.0, "USD", "RUB")),
+        ("inf usd rub", (1.0, "USD", "RUB")),
     ],
 )
 def test_parse_currency_query_matches(text, expected):
@@ -31,6 +35,7 @@ def test_parse_currency_query_matches(text, expected):
         "usd eur gbp",
         "usd usd 100",
         "100 200 usd rub",
+        "1e400 usd rub",
     ],
 )
 def test_parse_currency_query_does_not_match(text):

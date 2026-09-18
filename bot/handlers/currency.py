@@ -1,9 +1,11 @@
 import logging
+import math
 import os
 from uuid import uuid4
 
 from aiogram import Router
 from aiogram.types import InlineQuery, InlineQueryResultCachedPhoto, Message
+from aiohttp import ClientSession
 
 from bot.access import AccessControlMiddleware
 from bot.services.crypto import TICKER_TO_COINGECKO_ID
@@ -29,6 +31,17 @@ KNOWN_CURRENCY_CODES = frozenset(
 KNOWN_CODES = KNOWN_CURRENCY_CODES | TICKER_TO_COINGECKO_ID.keys()
 
 
+def _parse_amount(token: str) -> float:
+    if "." in token or token.count(",") > 1:
+        normalized = token.replace(",", "")
+    else:
+        normalized = token.replace(",", ".")
+    value = float(normalized)
+    if not math.isfinite(value):
+        raise ValueError(f"not a finite number: {token}")
+    return value
+
+
 def parse_currency_query(text: str) -> tuple[float, str, str] | None:
     currency_tokens: list[str] = []
     amount_tokens: list[float] = []
@@ -38,10 +51,11 @@ def parse_currency_query(text: str) -> tuple[float, str, str] | None:
         if upper in KNOWN_CODES:
             currency_tokens.append(upper)
             continue
-        try:
-            amount_tokens.append(float(token.replace(",", ".")))
-        except ValueError:
-            continue
+        if any(ch.isdigit() for ch in token):
+            try:
+                amount_tokens.append(_parse_amount(token))
+            except ValueError:
+                return None
 
     if len(currency_tokens) != 2 or len(amount_tokens) > 1:
         return None
@@ -70,17 +84,18 @@ def currency_query(message: Message) -> dict[str, float | str] | bool:
 
 @router.message(currency_query)
 async def handle_currency_message(
-    message: Message, amount: float, from_code: str, to_code: str
+    message: Message, amount: float, from_code: str, to_code: str, http_session: ClientSession
 ) -> None:
     user_id = message.from_user.id if message.from_user else "?"
     logger.info("Конвертация от %s: %s %s -> %s", user_id, amount, from_code, to_code)
     try:
-        result = await convert(amount, from_code, to_code)
+        result = await convert(http_session, amount, from_code, to_code)
         await message.answer_photo(
             photo=os.environ["CURRENCY_PLACEHOLDER_PHOTO_FILE_ID"],
             caption=format_conversion(amount, from_code, to_code, result),
         )
     except ExchangeError as e:
+        logger.warning("Отказ по конвертации %s %s -> %s: %s", amount, from_code, to_code, e)
         await message.answer(f"Не удалось сконвертировать: {e}")
     except Exception:
         logger.exception("Ошибка конвертации %s %s -> %s", amount, from_code, to_code)
@@ -97,7 +112,11 @@ def currency_inline_query(inline_query: InlineQuery) -> dict[str, float | str] |
 
 @router.inline_query(currency_inline_query)
 async def handle_currency_inline_query(
-    inline_query: InlineQuery, amount: float, from_code: str, to_code: str
+    inline_query: InlineQuery,
+    amount: float,
+    from_code: str,
+    to_code: str,
+    http_session: ClientSession,
 ) -> None:
     logger.info(
         "Inline-конвертация от %s: %s %s -> %s",
@@ -107,9 +126,10 @@ async def handle_currency_inline_query(
         to_code,
     )
     try:
-        result = await convert(amount, from_code, to_code)
+        result = await convert(http_session, amount, from_code, to_code)
         text = format_conversion(amount, from_code, to_code, result)
     except ExchangeError as e:
+        logger.warning("Отказ по inline-конвертации %s %s -> %s: %s", amount, from_code, to_code, e)
         text = f"Не удалось сконвертировать: {e}"
     except Exception:
         logger.exception("Ошибка inline-конвертации %s %s -> %s", amount, from_code, to_code)

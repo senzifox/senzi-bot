@@ -7,6 +7,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
+from bot.handlers.currency import router as currency_router
 from bot.handlers.downloader import router as downloader_router
 from bot.queue import create_queue_pool
 
@@ -25,6 +26,7 @@ async def main() -> None:
     )
     dp = Dispatcher()
     dp.include_router(downloader_router)
+    dp.include_router(currency_router)
 
     queue = await create_queue_pool()
 

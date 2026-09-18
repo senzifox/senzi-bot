@@ -1,13 +1,9 @@
 import logging
+import os
 from uuid import uuid4
 
 from aiogram import Router
-from aiogram.types import (
-    InlineQuery,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
-    Message,
-)
+from aiogram.types import InlineQuery, InlineQueryResultCachedPhoto, Message
 
 from bot.access import AccessControlMiddleware
 from bot.services.crypto import TICKER_TO_COINGECKO_ID
@@ -80,7 +76,10 @@ async def handle_currency_message(
     logger.info("Конвертация от %s: %s %s -> %s", user_id, amount, from_code, to_code)
     try:
         result = await convert(amount, from_code, to_code)
-        await message.answer(format_conversion(amount, from_code, to_code, result))
+        await message.answer_photo(
+            photo=os.environ["CURRENCY_PLACEHOLDER_PHOTO_FILE_ID"],
+            caption=format_conversion(amount, from_code, to_code, result),
+        )
     except ExchangeError as e:
         await message.answer(f"Не удалось сконвертировать: {e}")
     except Exception:
@@ -118,10 +117,10 @@ async def handle_currency_inline_query(
 
     await inline_query.answer(
         [
-            InlineQueryResultArticle(
+            InlineQueryResultCachedPhoto(
                 id=uuid4().hex,
-                title=text,
-                input_message_content=InputTextMessageContent(message_text=text),
+                photo_file_id=os.environ["CURRENCY_PLACEHOLDER_PHOTO_FILE_ID"],
+                caption=text,
             )
         ],
         cache_time=60,

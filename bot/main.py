@@ -8,6 +8,7 @@ from aiogram.enums import ParseMode
 from dotenv import load_dotenv
 
 from bot.handlers.downloader import router as downloader_router
+from bot.queue import create_queue_pool
 
 load_dotenv()
 
@@ -25,8 +26,10 @@ async def main() -> None:
     dp = Dispatcher()
     dp.include_router(downloader_router)
 
+    queue = await create_queue_pool()
+
     logging.info("Стартуем polling")
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, queue=queue)
 
 
 if __name__ == "__main__":

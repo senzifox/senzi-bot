@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - run: pip install -r requirements-dev.txt
+
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+
+  deploy:
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write .env
+        run: |
+          cat <<'EOF' > .env
+          BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+          ALLOWED_USER_IDS=${{ secrets.ALLOWED_USER_IDS }}
+          REDIS_URL=redis://redis:6379
+          PLACEHOLDER_PHOTO_FILE_ID=${{ secrets.PLACEHOLDER_PHOTO_FILE_ID }}
+          EOF
+
+      - run: docker compose up -d --build
